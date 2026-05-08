@@ -1,0 +1,32 @@
+name: Windows RDP via ngrok
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rdp:
+    runs-on: windows-latest
+
+    steps:
+    - name: Enable RDP
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+
+    - name: Set password for runneradmin
+      run: |
+        net user runneradmin "P@ssw0rd!"
+
+    - name: Download ngrok
+      run: |
+        Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+        Expand-Archive ngrok.zip -DestinationPath ngrok
+
+    - name: Authenticate ngrok
+      run: |
+        .\ngrok\ngrok.exe config add-authtoken 3DRgBnTRhmRTynaRJEiI3eFOKcO_mSd4HG11CDS5C6twJJzJ
+
+    - name: Start RDP tunnel
+      run: |
+        Start-Process -NoNewWindow -FilePath ".\ngrok\ngrok.exe" -ArgumentList "tcp 3389"
